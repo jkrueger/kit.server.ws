@@ -17,7 +17,6 @@
   (on [this evt f]
     (.on this (name evt) (comp f js->clj js/JSON.parse)))
   (send [this msg]
-    ;; (.log js/console "SENDING")
     (.send this (js/JSON.stringify (clj->js msg)))))
 
 (defrecord Server [sock opts]
@@ -40,7 +39,7 @@
     (when @sock
       (.on @sock (name evt) f)))
   (send [_ msg]
-    (.send @sock (js/JSON.stringify (clj->js msg)))))
+    (.send this (js/JSON.stringify (clj->js msg)))))
 
 (defrecord Client [sock opts]
   comp/Lifecycle
@@ -60,7 +59,7 @@
   Socket
   (on [_ evt f]
     (when @sock
-      (on @sock evt (comp f js->clj js/JSON.parse))))
+      (on @sock evt f)))
   (send [this msg]
     (send @sock msg)))
 

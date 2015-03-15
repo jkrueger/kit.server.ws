@@ -16,15 +16,13 @@
 
   (let [server     (atom (ws/server {:port 8080}))
         client     (atom (ws/client {:address "ws://localhost:8080/"}))
-        clients-ch (atom nil)
-        msg-ch     (atom nil)]
+        clients-ch (atom nil)]
 
     (it "open a websocket server when bringing the component up" [done]
       (go
         (try
           (reset! server (<? (<up @server)))
           (reset! clients-ch (ws/<on @server :connection))
-          (reset! msg-ch (ws/<on @server :message))
           (done)
           (catch js/Error e
             (done e)))))
@@ -40,12 +38,10 @@
     (it "allows a connected client to send messages to a server" [done]
       (go
         (try
-          (let [_ (<! @clients-ch)]
-            (.log js/console "TEST")
-            (ws/send @client {:msg "foo"})
-            (.log js/console "TEST2")
-            (let [msg (<! @msg-ch)]
-              (.log js/console "TEST3")
+          (let [client (<! @clients-ch)
+                msg-ch (ws/<on client :message)]
+            (ws/send client {:msg "foo"})
+            (let [msg (<! msg-ch)]
               (expect (:msg msg) :to.equal "foo"))
             (done))
           (catch js/Error e
