@@ -8,6 +8,17 @@
 (def WS  (js/require "ws"))
 (def WSS (.-Server WS))
 
+(defprotocol Socket
+  (on [_ evt f])
+  (send [_ msg]))
+
+(extend-type WS
+  Socket
+  (on [this evt f]
+    (.on this (name evt) f))
+  (send [this msg]
+    (.send @(:sock this) (clj->js msg))))
+
 (defrecord Server [sock opts]
   comp/Lifecycle
   (up [_ next]
@@ -22,7 +33,13 @@
       (reset! sock nil)
       (next)
       (catch js/Error e
-        (next e)))))
+        (next e))))
+  Socket
+  (on [_ evt f]
+    (when @sock
+      (.on @sock (name evt) f)))
+  (send [this msg]
+    (.send @(:sock this) (clj->js msg))))
 
 (defrecord Client [sock opts]
   comp/Lifecycle
@@ -38,7 +55,13 @@
       (reset! sock nil)
       (next)
       (catch js/Error e
-        (next e)))))
+        (next e))))
+  Socket
+  (on [_ evt f]
+    (when @sock
+      (.on @sock (name evt) f)))
+  (send [this msg]
+    (.send @(:sock this) (clj->js msg))))
 
 (defn server [opts]
   (let [opts (clj->js opts)]
@@ -47,11 +70,5 @@
 (defn client [opts]
   (let [opts (clj->js opts)]
     (Client. (atom nil) opts)))
-
-(defn send [this]
-  (.send @(:sock this)))
-
-(defn on [this evt f]
-  (.on @(:sock this) (name evt) f))
 
 (def <on (partial a/lift on))
