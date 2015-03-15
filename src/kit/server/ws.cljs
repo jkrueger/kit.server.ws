@@ -45,7 +45,7 @@
     (Server. (atom nil) opts)))
 
 (defn client [opts]
-  (Client. (WS. address) opts))
+  (Client. (atom nil) opts))
 
 (defn send [this]
   (.send @(:sock this)))
