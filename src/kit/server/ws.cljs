@@ -12,10 +12,13 @@
   (on [_ evt f])
   (send [_ msg]))
 
+(defn parse [x]
+  (js->clj x :keywordize-keys true))
+
 (extend-protocol Socket
   WS
   (on [this evt f]
-    (.on this (name evt) (comp f js->clj js/JSON.parse)))
+    (.on this (name evt) (comp f parse js/JSON.parse)))
   (send [this msg]
     (.send this (js/JSON.stringify (clj->js msg)))))
 

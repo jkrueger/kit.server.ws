@@ -38,9 +38,9 @@
     (it "allows a connected client to send messages to a server" [done]
       (go
         (try
-          (let [client (<! @clients-ch)
-                msg-ch (ws/<on client :message)]
-            (ws/send client {:msg "foo"})
+          (let [remote (<! @clients-ch)
+                msg-ch (ws/<on remote :message)]
+            (ws/send @client {:msg "foo"})
             (let [msg (<! msg-ch)]
               (expect (:msg msg) :to.equal "foo"))
             (done))
