@@ -18,7 +18,7 @@
         (next e))))
   (down [_ next]
     (try
-      (.close sock)
+      (.close @sock)
       (reset! sock nil)
       (next)
       (catch js/Error e
@@ -28,13 +28,13 @@
   comp/Lifecycle
   (up [_ next]
     (try
-      (reset! sock (WS. opts))
+      (reset! sock (WS. (? opts :address)))
       (.on @sock "open" next)
       (catch js/Error e
         (next e))))
   (down [_ next]
     (try
-      (.close sock)
+      (.close @sock)
       (reset! sock nil)
       (next)
       (catch js/Error e
@@ -45,10 +45,8 @@
     (Server. (atom nil) opts)))
 
 (defn client [opts]
-  (Client. (atom nil) opts))
-
-(defn send [this]
-  (.send @(:sock this)))
+  (let [opts (clj->js opts)]
+    (Client. (atom nil) opts)))
 
 (defn send [this]
   (.send @(:sock this)))
