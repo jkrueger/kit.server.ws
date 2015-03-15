@@ -1,7 +1,7 @@
 (ns kit.server.ws
   (:require
     [kit.app.component :as comp]
-    [kit.app.log :as log])
+    [kit.async :as a])
   (:require-macros
     [kit.core :refer (? !)]))
 
@@ -28,7 +28,7 @@
   comp/Lifecycle
   (up [_ next]
     (try
-      (reset! sock (Server. opts))
+      (reset! sock (WS. opts))
       (.on @sock "open" next)
       (catch js/Error e
         (next e))))
@@ -45,10 +45,15 @@
     (Server. (atom nil) opts)))
 
 (defn client [opts]
-  (Client. (WS. address)))
+  (Client. (WS. address) opts))
+
+(defn send [this]
+  (.send @(:sock this)))
 
 (defn send [this]
   (.send @(:sock this)))
 
 (defn on [this evt f]
   (.on @(:sock this) (name evt) f))
+
+(def <on (partial a/lift on))
