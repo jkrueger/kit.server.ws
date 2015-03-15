@@ -35,14 +35,18 @@
           (catch js/Error e
             (done e)))))
 
-    (it "allows a connected client to send messages to a server" [done]
+    (it "allows a connected client and server to send messages to each other" [done]
       (go
         (try
-          (let [remote (<! @clients-ch)
-                msg-ch (ws/<on remote :message)]
+          (let [remote    (<! @clients-ch)
+                msg-ch    (ws/<on remote :message)
+                remote-ch (ws/<on @client :message)]
             (ws/send @client {:msg "foo"})
             (let [msg (<! msg-ch)]
               (expect (:msg msg) :to.equal "foo"))
+            (ws/send remote {:msg "bar"})
+            (let [msg (<! remote-ch)]
+              (expect (:msg msg) :to.equal "bar"))
             (done))
           (catch js/Error e
             (done e)))))
