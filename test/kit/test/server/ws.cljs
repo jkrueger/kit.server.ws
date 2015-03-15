@@ -1,5 +1,6 @@
 (ns kit.test.server.ws
   (:require
+    [clojure.string :as str]
     [cljs.core.async :as async :refer (<! >!)]
     [kit.app.component :refer (<up <down Lifecycle system with)]
     [kit.server.ws :as ws]
@@ -12,10 +13,13 @@
 
 (def chai (js/require "chai"))
 
+(def port    {:port 8080})
+(def address {:address (str "ws://localhost:" (:port port))})
+
 (describe "WebSockets"
 
-  (let [server    (atom (ws/server {:port 8080}))
-        client    (atom (ws/client {:address "ws://localhost:8080/"}))
+  (let [server    (atom (ws/server port))
+        client    (atom (ws/client address))
         backlog   (atom nil)
         remote    (atom nil)
         remote-ch (atom nil)
@@ -61,6 +65,20 @@
           (let [err (<! @remote-ch)]
             (expect err :to.be.an.instanceof js/Error))
           (done)
+          (catch js/Error e
+            (done e)))))
+
+    (it "allows custom parsers when reading messages" [done]
+      (go
+        (try
+          (let [client    (<! (<up (ws/client address)))
+                remote    (<! @backlog)
+                parser    #(mapv js/parseInt (str/split % #","))
+                remote-ch (ws/<messages remote parser)]
+            (ws/raw client "1,2,3")
+            (let [msg (<! remote-ch)]
+              (expect msg :to.eql [1,2,3]))
+            (done))
           (catch js/Error e
             (done e)))))
 

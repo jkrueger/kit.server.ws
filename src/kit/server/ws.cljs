@@ -1,5 +1,6 @@
 (ns kit.server.ws
   (:require
+    [cljs.core.async :as async]
     [kit.app.component :as comp]
     [kit.async :as a])
   (:require-macros
@@ -15,18 +16,16 @@
   (send [_ msg])
   (raw [_ msg]))
 
-(defn parse [x]
-  (js->clj x :keywordize-keys true))
+(defn- parse [x]
+  (try
+    (js->clj (js/JSON.parse x) :keywordize-keys true)
+    (catch js/Error e
+      e)))
 
 (extend-type WS
   EventSource
   (on [this evt f]
-    (.on this (name evt)
-      (fn [x]
-        (try
-          (f (parse (js/JSON.parse x)))
-          (catch js/Error e
-            (f e))))))
+    (.on this (name evt) f))
   Socket
   (send [this msg]
     (.send this (js/JSON.stringify (clj->js msg))))
@@ -88,8 +87,11 @@
 
 (def <on (partial a/lift on))
 
-(defn <messages [sock]
-  (<on sock :message))
+(defn <messages
+  ([sock]
+   (<messages sock parse))
+  ([sock parse-fn]
+   (async/map parse-fn [(<on sock :message)])))
 
 (defn <accept [server]
   (<on server :connection))
