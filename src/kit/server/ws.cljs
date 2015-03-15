@@ -17,7 +17,7 @@
   (on [this evt f]
     (.on this (name evt) f))
   (send [this msg]
-    (.send @(:sock this) (clj->js msg))))
+    (.send this (clj->js msg))))
 
 (defrecord Server [sock opts]
   comp/Lifecycle
@@ -36,7 +36,9 @@
         (next e))))
   Socket
   (on [_ evt f]
+    (.log js/console "ON")
     (when @sock
+      (.log js/console "ON2")
       (.on @sock (name evt) f)))
   (send [this msg]
     (.send @(:sock this) (clj->js msg))))

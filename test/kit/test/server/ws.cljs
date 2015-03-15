@@ -39,6 +39,7 @@
       (it "allows a connected client to send messages to a server" [done]
         (go
           (try
+            (.log js/console "WAITING")
             (let [client (<! clients-ch)]
               (.log js/console "SENDING")
               (ws/send @client {:msg "foo"})
