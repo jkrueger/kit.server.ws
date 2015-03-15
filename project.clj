@@ -7,6 +7,7 @@
      [mocha-latte "0.1.2"]
      [chai-latte  "0.3.0-SNAPSHOT"]
      [vupt/kit.core  "0.1.0-SNAPSHOT"]
+     [vupt/kit.app   "0.1.0-SNAPSHOT"]
      [vupt/kit.async "0.1.0-SNAPSHOT"]]
   
   :node-dependencies 
