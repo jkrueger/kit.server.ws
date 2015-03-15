@@ -12,12 +12,13 @@
   (on [_ evt f])
   (send [_ msg]))
 
-(extend-type WS
-  Socket
+(extend-protocol Socket
+  WS
   (on [this evt f]
-    (.on this (name evt) f))
+    (.on this (name evt) (comp f js->clj js/JSON.parse)))
   (send [this msg]
-    (.send this (clj->js msg))))
+    ;; (.log js/console "SENDING")
+    (.send this (js/JSON.stringify (clj->js msg)))))
 
 (defrecord Server [sock opts]
   comp/Lifecycle
@@ -36,12 +37,10 @@
         (next e))))
   Socket
   (on [_ evt f]
-    (.log js/console "ON")
     (when @sock
-      (.log js/console "ON2")
       (.on @sock (name evt) f)))
-  (send [this msg]
-    (.send @(:sock this) (clj->js msg))))
+  (send [_ msg]
+    (.send @sock (js/JSON.stringify (clj->js msg)))))
 
 (defrecord Client [sock opts]
   comp/Lifecycle
@@ -61,9 +60,9 @@
   Socket
   (on [_ evt f]
     (when @sock
-      (.on @sock (name evt) f)))
+      (on @sock evt (comp f js->clj js/JSON.parse))))
   (send [this msg]
-    (.send @(:sock this) (clj->js msg))))
+    (send @sock msg)))
 
 (defn server [opts]
   (let [opts (clj->js opts)]
