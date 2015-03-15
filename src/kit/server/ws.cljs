@@ -18,7 +18,12 @@
 (extend-protocol Socket
   WS
   (on [this evt f]
-    (.on this (name evt) (comp f parse js/JSON.parse)))
+    (.on this (name evt)
+         (fn [x]
+           (try
+             (f (parse (js/JSON.parse x)))
+             (catch js/Error e
+               (f e))))))
   (send [this msg]
     (.send this (js/JSON.stringify (clj->js msg)))))
 
@@ -42,7 +47,7 @@
     (when @sock
       (.on @sock (name evt) f)))
   (send [_ msg]
-    (.send this (js/JSON.stringify (clj->js msg)))))
+    (.send @sock (js/JSON.stringify (clj->js msg)))))
 
 (defrecord Client [sock opts]
   comp/Lifecycle
