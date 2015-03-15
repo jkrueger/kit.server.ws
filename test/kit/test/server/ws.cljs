@@ -14,15 +14,18 @@
 
 (describe "WebSockets"
 
-  (let [server     (atom (ws/server {:port 8080}))
-        client     (atom (ws/client {:address "ws://localhost:8080/"}))
-        clients-ch (atom nil)]
+  (let [server    (atom (ws/server {:port 8080}))
+        client    (atom (ws/client {:address "ws://localhost:8080/"}))
+        backlog   (atom nil)
+        remote    (atom nil)
+        remote-ch (atom nil)
+        client-ch (atom nil)]
 
     (it "open a websocket server when bringing the component up" [done]
       (go
         (try
           (reset! server (<? (<up @server)))
-          (reset! clients-ch (ws/<on @server :connection))
+          (reset! backlog (ws/<accept @server))
           (done)
           (catch js/Error e
             (done e)))))
@@ -31,23 +34,33 @@
       (go
         (try
           (reset! client (<? (<up @client)))
+          (reset! remote (<! @backlog))
+          (reset! remote-ch (ws/<messages @remote))
+          (reset! client-ch (ws/<messages @client))
           (done)
           (catch js/Error e
             (done e)))))
 
-    (it "allows a connected client and server to send messages to each other" [done]
+    (it "allow a connected client and server to send messages to each other" [done]
       (go
         (try
-          (let [remote    (<! @clients-ch)
-                msg-ch    (ws/<on remote :message)
-                remote-ch (ws/<on @client :message)]
-            (ws/send @client {:msg "foo"})
-            (let [msg (<! msg-ch)]
-              (expect (:msg msg) :to.equal "foo"))
-            (ws/send remote {:msg "bar"})
-            (let [msg (<! remote-ch)]
-              (expect (:msg msg) :to.equal "bar"))
-            (done))
+          (ws/send @client {:msg "foo"})
+          (let [msg (<! @remote-ch)]
+            (expect (:msg msg) :to.equal "foo"))
+          (ws/send @remote {:msg "bar"})
+          (let [msg (<! @client-ch)]
+            (expect (:msg msg) :to.equal "bar"))
+          (done)
+          (catch js/Error e
+            (done e)))))
+
+    (it "propagates errors through async channels" [done]
+      (go
+        (try
+          (ws/raw @client "[1, 2, 3")
+          (let [err (<! @remote-ch)]
+            (expect err :to.be.an.instanceof js/Error))
+          (done)
           (catch js/Error e
             (done e)))))
 
