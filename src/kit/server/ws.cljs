@@ -16,7 +16,7 @@
   (send [_ msg])
   (raw [_ msg]))
 
-(defn- parse [x]
+(defn parse [x]
   (try
     (js->clj (js/JSON.parse x) :keywordize-keys true)
     (catch js/Error e
@@ -91,7 +91,11 @@
   ([sock]
    (<messages sock parse))
   ([sock parse-fn]
-   (async/map parse-fn [(<on sock :message)])))
+   (let [ch (<on sock :message)]
+     (.on sock "close"
+       (fn []
+         (async/close! ch)))
+     (async/map parse-fn [ch]))))
 
 (defn <accept [server]
   (<on server :connection))
