@@ -9,9 +9,6 @@
 (def WS  (js/require "ws"))
 (def WSS (.-Server WS))
 
-(defprotocol EventSource
-  (on [_ evt f]))
-
 (defprotocol Socket
   (send [_ msg])
   (raw [_ msg]))
@@ -23,7 +20,7 @@
       e)))
 
 (extend-type WS
-  EventSource
+  a/EventSource
   (on [this evt f]
     (.on this (name evt) f))
   Socket
@@ -47,7 +44,7 @@
       (next)
       (catch js/Error e
         (next e))))
-  EventSource
+  a/EventSource
   (on [_ evt f]
     (when @sock
       (.on @sock (name evt) f))))
@@ -67,7 +64,7 @@
       (next)
       (catch js/Error e
         (next e))))
-  EventSource
+  a/EventSource
   (on [_ evt f]
     (when @sock
       (on @sock evt f)))
@@ -85,9 +82,13 @@
   (let [opts (clj->js opts)]
     (Client. (atom nil) opts)))
 
-(def <on (partial a/lift on))
-
 (defn <messages
+  "Returns a new channel which will contain all
+  the messages received from sock. Optionally a parse
+  function can be supplied, which will be applied to
+  each message received on the socket. If no parser is
+  specified the messages are assumed to be json formatted
+  strings"
   ([sock]
    (<messages sock parse))
   ([sock parse-fn]
@@ -97,5 +98,18 @@
          (async/close! ch)))
      (async/map parse-fn [ch]))))
 
-(defn <accept [server]
+(defn <accept
+  "Returns a new "
+  [server]
   (<on server :connection))
+
+(defn <sink
+  "Returns a channel that can be written to. Each value
+   put on the channel will be send over the socket"
+  [sock]
+  (let [channel (chan)]
+    (go
+      (loop []
+        (when-let [msg (<! channel)]
+          (send sock msg)
+          (recur))))))
