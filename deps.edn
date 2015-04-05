@@ -1,0 +1,7 @@
+{
+ :git [[kit.core  "git@github.com:jkrueger/kit.core.git"  "feature/boot"]
+       [kit.app   "git@github.com:jkrueger/kit.app.git"   "feature/boot"]
+       [kit.async "git@github.com:jkrueger/kit.async.git" "feature/boot"]]
+ :jar []
+ :npm [[ws "0.7.1"]]
+}
