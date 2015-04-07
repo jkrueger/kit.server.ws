@@ -1,9 +1,10 @@
 (ns kit.server.ws
   (:require
-    [cljs.core.async :as async]
+    [cljs.core.async :as async :refer (chan <! >!)]
     [kit.app.component :as comp]
     [kit.async :as a])
   (:require-macros
+    [cljs.core.async.macros :refer (go)]
     [kit.core :refer (? !)]))
 
 (def WS  (js/require "ws"))
