@@ -67,7 +67,7 @@
   a/EventSource
   (on [_ evt f]
     (when @sock
-      (on @sock evt f)))
+      (a/on @sock evt f)))
   Socket
   (send [this msg]
     (send @sock msg))
@@ -92,7 +92,7 @@
   ([sock]
    (<messages sock parse))
   ([sock parse-fn]
-   (let [ch (<on sock :message)]
+   (let [ch (a/<on sock :message)]
      (.on sock "close"
        (fn []
          (async/close! ch)))
@@ -101,7 +101,7 @@
 (defn <accept
   "Returns a new "
   [server]
-  (<on server :connection))
+  (a/<on server :connection))
 
 (defn <sink
   "Returns a channel that can be written to. Each value
